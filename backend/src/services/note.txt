@@ -1,3 +1,0 @@
-nhận dữ liệu từ controler đưa qua services xử lí
-services sẽ tương tác với models để xử lý
-xử lý xong trả lại conttroller

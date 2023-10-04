@@ -3,90 +3,73 @@ import "./App.css";
 import axios from "axios";
 
 function App() {
-  const [data, setData] = useState([]);
-  const [defaultValue, setDefaultValue] = useState(null);
-  const [value, setValue] = useState("");
-  const [isCheck, setIsCheck] = useState(false);
-
+  const [category, setCategory] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [newQuestions, setNewQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [score, setScore] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/v1/notes`).then((response) => {
-      setData(response.data.data);
+    axios.get(`http://localhost:5000/api/v1/categories`).then((response) => {
+      setCategory(response.data.data);
     });
-  }, [isCheck]);
+    axios.get(`http://localhost:5000/api/v1/questions`).then((response) => {
+      setQuestions(response.data.data);
+    });
+    axios.get(`http://localhost:5000/api/v1/answers`).then((response) => {
+      setAnswers(response.data.data);
+    });
+  }, []);
 
-  const handleAddNew = () => {
-    const content = value;
-    if (defaultValue === null) {
-      axios
-        .post("http://localhost:5000/api/v1/notes", { content })
-        .then((response) => {
-          setIsCheck(!isCheck);
-          alert(response.data.message);
-          setValue("");
-        })
-        .catch((error) => {
-          console.error("Error fetching data:", error);
-        });
-    } else {
-      axios
-        .put(`http://localhost:5000/api/v1/notes/${defaultValue}`, { content })
-        .then((response) => {
-          setIsCheck(!isCheck);
-          setDefaultValue(null);
-          setValue("");
-          alert(response.data.message);
-        })
-        .catch((error) => {
-          console.error("Error fetching data:", error);
-        });
-    }
-  };
-  const handleDelete = (id) => {
-    axios
-      .delete(`http://localhost:5000/api/v1/notes/${id}`)
-      .then((response) => {
-        setIsCheck(!isCheck);
-        alert(response.data.message);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
-  };
-  const handleEdit = (id) => {
-    setDefaultValue(id);
-    axios
-      .get(`http://localhost:5000/api/v1/notes/${id}`)
-      .then((response) => {
-        setValue(response.data.data.content);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
+  const handleClick = (id) => {
+    setNewQuestions(
+      questions.filter((question) => question.category_id === id)
+    );
   };
   return (
     <>
-      <h1>Note app</h1>
-      <div className="note">
-        <label>Content</label>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <button onClick={handleAddNew}>submit</button>
-      </div>
-      <div className="list">
-        {data?.map((item, index) => {
+      <h1>Điểm: {score}</h1>
+      <div className="category">
+        <h3>Vui lòng chọn chủ đề</h3>
+        {category?.map((item, index) => {
           return (
-            <div key={index} className="item">
-              <p>{item.content}</p>
-              <div>
-                <button onClick={() => handleEdit(item.id)}>edit</button>
-                <button onClick={() => handleDelete(item.id)}>delete</button>
-              </div>
-            </div>
+            <button key={index} onClick={() => handleClick(item.id)}>
+              {item.name}
+            </button>
           );
         })}
+      </div>
+      <div className="category">
+        {newQuestions.map((question) => (
+          <div key={question.id}>
+            <p>{question.content}</p>
+            <ul>
+              {answers
+                .filter((answer) => answer.question_id === question.id)
+                .map((answer) => (
+                  <li key={answer.id}>
+                    <input
+                      type="radio"
+                      value={answer.id}
+                      checked={selectedAnswers[question.id] === answer.id}
+                      onChange={(e) => {
+                        if (!selectedAnswers[question.id]) {
+                          setSelectedAnswers({
+                            ...selectedAnswers,
+                            [question.id]: answer.id,
+                          });
+                          if (answer.is_answer === 1) {
+                            setScore(score + 1);
+                          }
+                        }
+                      }}
+                    />
+                    {answer.content}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </>
   );
